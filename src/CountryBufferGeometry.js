@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { BufferGeometry, BufferAttribute } from "three";
 import { voronoi } from "d3-voronoi";
 // TODO use delaunay instead of voronoi

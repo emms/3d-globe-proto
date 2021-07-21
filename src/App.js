@@ -6,7 +6,7 @@ import React, {
   useCallback,
 } from "react";
 import styled from "styled-components";
-import { Canvas, extend, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, extend } from "@react-three/fiber";
 import { a, useSpring } from "@react-spring/three";
 import { PerspectiveCamera, OrbitControls } from "@react-three/drei";
 import CountryBufferGeometry from "CountryBufferGeometry";

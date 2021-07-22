@@ -6,7 +6,7 @@ import React, {
   useCallback,
 } from "react";
 import styled from "styled-components";
-import { Canvas, extend, useFrame } from "@react-three/fiber";
+import { Canvas, extend } from "@react-three/fiber";
 import { a, useSpring } from "@react-spring/three";
 import { PerspectiveCamera, OrbitControls } from "@react-three/drei";
 import CountryBufferGeometry from "CountryBufferGeometry";
@@ -90,7 +90,6 @@ const Earth = ({ children }) => {
 
 const Camera = ({ countryCenter }) => {
   const cameraRef = useRef();
-  const spotLightRef = useRef();
 
   const nextCamPos = useMemo(() => {
     if (!countryCenter) {
@@ -105,12 +104,6 @@ const Camera = ({ countryCenter }) => {
     pos.normalize();
     return [pos.x, pos.y, pos.z, CAM_LENGTH_ZOOMED];
   }, [countryCenter, cameraRef]);
-
-  useFrame(() => {
-    spotLightRef.current.position.x = cameraRef.current.position.x;
-    spotLightRef.current.position.y = cameraRef.current.position.y;
-    spotLightRef.current.position.z = cameraRef.current.position.z;
-  });
 
   const updateCameraPos = useCallback(
     ({ value: { pos, cameraOffset } }) => {
@@ -160,17 +153,18 @@ const Camera = ({ countryCenter }) => {
 
   return (
     <>
-      <PerspectiveCamera ref={cameraRef} makeDefault fov={CAM_FOV} />
-      <spotLight
-        ref={spotLightRef}
-        castShadow
-        intensity={2.25}
-        angle={0.6}
-        penumbra={1}
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-bias={-0.0001}
-      />
+      <PerspectiveCamera ref={cameraRef} makeDefault fov={CAM_FOV}>
+        <spotLight
+          castShadow
+          intensity={2.1}
+          angle={0.6}
+          penumbra={1}
+          position={[5, 5, 5]}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+          shadow-bias={-0.0001}
+        />
+      </PerspectiveCamera>
     </>
   );
 };

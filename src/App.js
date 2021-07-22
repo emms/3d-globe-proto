@@ -6,12 +6,14 @@ import React, {
   useCallback,
 } from "react";
 import styled from "styled-components";
-import { Canvas, extend } from "@react-three/fiber";
+import { Canvas, extend, useFrame } from "@react-three/fiber";
 import { a, useSpring } from "@react-spring/three";
 import { PerspectiveCamera, OrbitControls } from "@react-three/drei";
 import CountryBufferGeometry from "CountryBufferGeometry";
 import geojson from "countries.geojson.json";
 import { GlobalStyle } from "styles";
+
+extend({ CountryBufferGeometry });
 
 const CAM_LENGTH_START = 10;
 const CAM_LENGTH_ZOOMED = 2;
@@ -19,12 +21,29 @@ const CAM_LENGTH_UN_ZOOMED = 3;
 const CAM_FOV = 50;
 
 const Bg = styled.div`
+  position: relative;
   width: 100%;
   height: 100%;
   background-color: #1d222f;
 `;
 
-extend({ CountryBufferGeometry });
+const CanvasContainer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+`;
+
+const Content = styled.div`
+  position: relative;
+  padding: 32px;
+`;
+
+const BackButton = styled.button`
+  padding: 20px 40px;
+  font-size: 18px;
+`;
 
 const countriesData = [];
 Object.keys(geojson).forEach((region) => {
@@ -75,12 +94,23 @@ const Camera = ({ countryCenter }) => {
 
   const nextCamPos = useMemo(() => {
     if (!countryCenter) {
-      return [0, 0, CAM_LENGTH_UN_ZOOMED, CAM_LENGTH_UN_ZOOMED];
+      return [
+        cameraRef.current?.position.x || 0,
+        cameraRef.current?.position.y || 0,
+        cameraRef.current?.position.z || CAM_LENGTH_UN_ZOOMED,
+        CAM_LENGTH_UN_ZOOMED,
+      ];
     }
     const pos = countryCenter.clone();
     pos.normalize();
     return [pos.x, pos.y, pos.z, CAM_LENGTH_ZOOMED];
-  }, [countryCenter]);
+  }, [countryCenter, cameraRef]);
+
+  useFrame(() => {
+    spotLightRef.current.position.x = cameraRef.current.position.x;
+    spotLightRef.current.position.y = cameraRef.current.position.y;
+    spotLightRef.current.position.z = cameraRef.current.position.z;
+  });
 
   const updateCameraPos = useCallback(
     ({ value: { pos, cameraOffset } }) => {
@@ -93,11 +123,6 @@ const Camera = ({ countryCenter }) => {
       cameraRef.current.position.setLength(pos[3]);
       cameraRef.current.lookAt(0, 0, 0);
 
-      spotLightRef.current.position.x = pos[0];
-      spotLightRef.current.position.y = pos[1];
-      spotLightRef.current.position.z = pos[2];
-      spotLightRef.current.position.setLength(pos[3]);
-
       cameraRef.current.setViewOffset(
         window.innerWidth,
         window.innerHeight,
@@ -108,7 +133,7 @@ const Camera = ({ countryCenter }) => {
       );
       cameraRef.current.updateProjectionMatrix();
     },
-    [cameraRef, spotLightRef]
+    [cameraRef]
   );
 
   const [, set] = useSpring(() => ({
@@ -155,28 +180,41 @@ const App = () => {
 
   return (
     <Bg>
-      <Canvas mode="concurrent">
-        <Camera countryCenter={countryCenter} />
-        <ambientLight intensity={0.75} />
-        <Earth>
-          {countriesData.map((country) => (
-            <Country
-              coordinates={country.geometry.coordinates}
-              color="#FFFFFF"
-              onClick={(vector) => {
-                setCountryCenter(vector);
-              }}
-            />
-          ))}
-        </Earth>
-        <fog attach="fog" args={["#1d222f", 1, 6]} />
-        <OrbitControls
-          autoRotate={!countryCenter}
-          autoRotateSpeed={1}
-          enableZoom={false}
-        />
-      </Canvas>
       <GlobalStyle />
+      <CanvasContainer>
+        <Canvas mode="concurrent">
+          <Camera countryCenter={countryCenter} />
+          <ambientLight intensity={0.75} />
+          <Earth>
+            {countriesData.map((country) => (
+              <Country
+                coordinates={country.geometry.coordinates}
+                color="#FFFFFF"
+                onClick={(vector) => {
+                  setCountryCenter(vector);
+                }}
+              />
+            ))}
+          </Earth>
+          <fog attach="fog" args={["#1d222f", 1, 6]} />
+          <OrbitControls
+            autoRotate={!countryCenter}
+            autoRotateSpeed={1}
+            enableZoom={false}
+          />
+        </Canvas>
+      </CanvasContainer>
+      <Content>
+        {countryCenter && (
+          <BackButton
+            onClick={() => {
+              setCountryCenter(undefined);
+            }}
+          >
+            Back
+          </BackButton>
+        )}
+      </Content>
     </Bg>
   );
 };
